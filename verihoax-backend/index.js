@@ -69,7 +69,7 @@ app.post('/api/analyze', async (req, res) => {
     console.log("📝 Respon AI:", rawText);
 
     const aiData = JSON.parse(rawText);
-    console.log(`✅ AI Berhasil! Skor: ${aiData.skor}`);
+    console.log(` AI Berhasil! Skor: ${aiData.skor}`);
 
     // --- STEP B: BLOCKCHAIN (NONAKTIF/BYPASS) ---
     console.log('🚧 Blockchain dimatikan sementara untuk testing...');
