@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// --- 1. SETUP KONFIGURASI ---
 dotenv.config();
 const app = express();
 
@@ -14,12 +13,6 @@ if (!process.env.GROQ_API_KEY) {
 app.use(cors({ origin: '*', methods: ['GET', 'POST'] })); 
 app.use(express.json());
 
-// --- 2. SETUP BLOCKCHAIN (SKIP DULU) ---
-// const provider = new ethers.JsonRpcProvider(process.env.AMOY_RPC_URL);
-// const wallet = new ethers.Wallet(process.env.YOUR_PRIVATE_KEY, provider);
-// ... (Kita lewati setup kontrak agar tidak ada error koneksi wallet) ...
-
-// --- 3. ENDPOINT API ---
 app.post('/api/analyze', async (req, res) => {
   const { claim } = req.body;
   if (!claim) return res.status(400).json({ error: 'Klaim kosong' });
@@ -27,7 +20,6 @@ app.post('/api/analyze', async (req, res) => {
   console.log(`\n📩 [TEST MODE] Menerima Klaim: "${claim}"`);
 
   try {
-    // --- STEP A: PANGGIL AI (AKTIF) ---
     console.log('⚡ Menghubungi Groq (Llama 3.3)...');
     
     const apiKey = process.env.GROQ_API_KEY;
@@ -49,7 +41,7 @@ app.post('/api/analyze', async (req, res) => {
             'Content-Type': 'application/json' 
         },
         body: JSON.stringify({
-            model: "llama-3.3-70b-versatile", // Model terbaru
+            model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: "Anda adalah mesin output JSON." },
                 { role: "user", content: systemPrompt }
@@ -68,14 +60,12 @@ app.post('/api/analyze', async (req, res) => {
     console.log("📝 Respon AI:", rawText);
 
     const aiData = JSON.parse(rawText);
-    console.log(`✅ AI Berhasil! Skor: ${aiData.skor}`);
+    console.log(` AI Berhasil! Skor: ${aiData.skor}`);
 
-    // --- STEP B: BLOCKCHAIN (NONAKTIF/BYPASS) ---
     console.log('🚧 Blockchain dimatikan sementara untuk testing...');
     
     const fakeHash = "0x_MODE_TESTING_TANPA_BLOCKCHAIN_" + Date.now();
 
-    // --- STEP C: KIRIM KE FRONTEND ---
     res.json({ 
         success: true, 
         analysisData: aiData, 
