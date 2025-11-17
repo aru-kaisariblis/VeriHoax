@@ -6,7 +6,6 @@
     <title>VeriBlock - Anti-Hoax</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 2. Ini adalah style tambahan untuk animasi spinner (loading) */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -16,7 +15,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border-left-color: #6D28D9; /* Warna ungu */
+            border-left-color: #6D28D9;
             animation: spin 1s linear infinite;
         }
     </style>
@@ -129,7 +128,7 @@
                     console.error('TERJADI ERROR:', error);
                     loadingDiv.innerHTML = `<p class="text-red-400">Error! ${error.message}. Cek terminal backend Anda.</p>`;
                 } finally {
-                    analyzeButton.disabled = false; // Aktifkan tombol lagi
+                    analyzeButton.disabled = false;
                 }
             });
         });
