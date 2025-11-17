@@ -1,13 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import { ethers } from 'ethers'; // Kita matikan sementara import ethers agar tidak error di awal
 
 // --- 1. SETUP KONFIGURASI ---
 dotenv.config();
 const app = express();
 
-// Validasi Cukup API Key AI saja
 if (!process.env.GROQ_API_KEY) {
     console.error("❌ ERROR: GROQ_API_KEY belum diisi di .env");
     process.exit(1);
@@ -75,14 +73,13 @@ app.post('/api/analyze', async (req, res) => {
     // --- STEP B: BLOCKCHAIN (NONAKTIF/BYPASS) ---
     console.log('🚧 Blockchain dimatikan sementara untuk testing...');
     
-    // Kita buat "Hash Palsu" agar Frontend tidak error (karena frontend butuh data txHash)
     const fakeHash = "0x_MODE_TESTING_TANPA_BLOCKCHAIN_" + Date.now();
 
     // --- STEP C: KIRIM KE FRONTEND ---
     res.json({ 
         success: true, 
         analysisData: aiData, 
-        txHash: fakeHash // Hash palsu untuk demo
+        txHash: fakeHash
     });
 
   } catch (error) {
