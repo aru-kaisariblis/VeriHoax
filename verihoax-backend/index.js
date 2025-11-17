@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import { ethers } from 'ethers'; // Kita matikan sementara import ethers agar tidak error di awal
+// import { ethers } from 'ethers';
 
 // --- 1. SETUP KONFIGURASI ---
 dotenv.config();
@@ -19,7 +19,6 @@ app.use(express.json());
 // --- 2. SETUP BLOCKCHAIN (SKIP DULU) ---
 // const provider = new ethers.JsonRpcProvider(process.env.AMOY_RPC_URL);
 // const wallet = new ethers.Wallet(process.env.YOUR_PRIVATE_KEY, provider);
-// ... (Kita lewati setup kontrak agar tidak ada error koneksi wallet) ...
 
 // --- 3. ENDPOINT API ---
 app.post('/api/analyze', async (req, res) => {
@@ -75,7 +74,6 @@ app.post('/api/analyze', async (req, res) => {
     // --- STEP B: BLOCKCHAIN (NONAKTIF/BYPASS) ---
     console.log('🚧 Blockchain dimatikan sementara untuk testing...');
     
-    // Kita buat "Hash Palsu" agar Frontend tidak error (karena frontend butuh data txHash)
     const fakeHash = "0x_MODE_TESTING_TANPA_BLOCKCHAIN_" + Date.now();
 
     // --- STEP C: KIRIM KE FRONTEND ---
