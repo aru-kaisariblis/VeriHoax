@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriBlock - Anti-Hoax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 2. Ini adalah style tambahan untuk animasi spinner (loading) */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #6D28D9; /* Warna ungu */
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                VeriBlock 🛡️
+            </h1>
+            <p class="text-lg text-gray-400">Pengecek Fakta AI, Diabadikan di Blockchain.</p>
+        </header>
+
+        <main class="bg-gray-800 p-6 rounded-lg shadow-xl">
+            <h3 class="text-xl font-semibold mb-3">Masukkan Klaim Hoaks:</h3>
+            <p class="text-gray-400 text-sm mb-4">Contoh: "Air nanas menyembuhkan COVID-19?"</p>
+            
+            <textarea id="claimInput" rows="4" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            
+            <button id="analyzeButton" class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold text-lg hover:opacity-90 transition-all disabled:opacity-50">
+                Analisis Sekarang
+            </button>
+
+            <div id="loading" class="text-center p-6" style="display: none;">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-400">Menganalisis... Memanggil AI dan mencatat di Blockchain. Ini mungkin butuh 15-30 detik...</p>
+            </div>
+
+            <div id="result" class="mt-6" style="display: none;">
+                <h3 class="text-2xl font-semibold mb-4">Hasil Analisis AI:</h3>
+                
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-sm text-gray-400">Ringkasan:</p>
+                    <p id="resRingkasan" class="text-lg font-medium"></p>
+                </div>
+
+                <div class="bg-gray-700 p-4 rounded-lg mt-3">
+                    <p class="text-sm text-gray-400">Skor Kepercayaan:</p>
+                    <p id="resSkor" class="text-3xl font-bold text-white"></p>
+                </div>
+                
+                <div class="bg-gray-700 p-4 rounded-lg mt-3">
+                    <p class="text-sm text-gray-400">Analisis:</p>
+                    <p id="resAnalisis" class="text-lg"></p>
+                </div>
+
+                <div class="mt-6 border-t border-gray-700 pt-4 text-center">
+                    <p class="font-semibold text-green-400">Bukti Blockchain (Abadi):</p>
+                    <a id="resLink" href="#" target="_blank" class="text-purple-400 hover:underline">
+                        Lihat Transaksi di AmoyScan
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center text-gray-600 text-sm mt-6">
+            Created by kata arun terserah
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const analyzeButton = document.getElementById('analyzeButton');
+            const claimInput = document.getElementById('claimInput');
+            const loadingDiv = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+
+            if (!analyzeButton) {
+                console.error('ERROR: Tombol "Analisis Sekarang" TIDAK ditemukan!');
+                return;
+            }
+
+            analyzeButton.addEventListener('click', async () => {
+                
+                const claim = claimInput.value;
+                if (!claim) {
+                    alert('Klaim tidak boleh kosong!');
+                    return;
+                }
+
+                loadingDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+                analyzeButton.disabled = true;
+
+                try {
+                    const response = await fetch('http://localhost:8080/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ claim: claim })
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || 'Gagal terhubung ke backend.');
+                    }
+
+                    const data = await response.json();
+
+                    document.getElementById('resRingkasan').innerText = data.analysisData.ringkasan;
+                    document.getElementById('resSkor').innerText = `${data.analysisData.skor}/100`;
+                    document.getElementById('resAnalisis').innerText = data.analysisData.analisis;
+                    document.getElementById('resLink').href = `https://amoy.polygonscan.com/tx/${data.txHash}`;
+                    
+                    loadingDiv.style.display = 'none';
+                    resultDiv.style.display = 'block';
+
+                } catch (error) {
+                    console.error('TERJADI ERROR:', error);
+                    loadingDiv.innerHTML = `<p class="text-red-400">Error! ${error.message}. Cek terminal backend Anda.</p>`;
+                } finally {
+                    analyzeButton.disabled = false; // Aktifkan tombol lagi
+                }
+            });
+        });
+    </script>
+</body>
+</html>
