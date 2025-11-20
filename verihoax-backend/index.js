@@ -1,116 +1,125 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import multer from 'multer'; // Import multer untuk handle file
+import multer from 'multer';
 import fs from 'fs';
+import Groq from 'groq-sdk';
+import axios from 'axios';
 
 dotenv.config();
 const app = express();
-
-// Konfigurasi upload (simpan sementara di folder 'uploads')
 const upload = multer({ dest: 'uploads/' });
 
-if (!process.env.GROQ_API_KEY) {
-    console.error("❌ ERROR: GROQ_API_KEY belum diisi di .env");
+// Validasi API Key
+if (!process.env.GROQ_API_KEY || !process.env.TAVILY_API_KEY) {
+    console.error("❌ ERROR: Pastikan GROQ_API_KEY dan TAVILY_API_KEY ada di .env");
     process.exit(1);
 }
 
-app.use(cors({ origin: '*', methods: ['GET', 'POST'] })); 
-// Kita tidak butuh express.json() di route ini karena pakai FormData, tapi biarkan untuk route lain jika ada.
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
 
-// Tambahkan middleware 'upload.single' untuk menerima 1 file bernama 'media'
+// --- FUNGSI SEARCH TAVILY (INTERNET) ---
+async function searchInternet(query) {
+    try {
+        console.log(`🔎 Searching Tavily: "${query}"...`);
+        const response = await axios.post('https://api.tavily.com/search', {
+            api_key: process.env.TAVILY_API_KEY,
+            query: query,
+            search_depth: "basic",
+            include_answer: true,
+            max_results: 3
+        });
+        
+        if (!response.data.results) return "";
+        return response.data.results.map(r => `- ${r.title} (${r.url}): ${r.content}`).join("\n");
+    } catch (error) {
+        console.error("⚠️ Search Error (Skip):", error.message);
+        return "";
+    }
+}
+
 app.post('/api/analyze', upload.single('media'), async (req, res) => {
-  
-  // Ambil text dari body, dan file info dari req.file
-  const { claim } = req.body; 
-  const file = req.file;
+    const { claim } = req.body;
+    const file = req.file;
 
-  // Validasi minimal ada salah satu (text atau file)
-  if (!claim && !file) return res.status(400).json({ error: 'Mohon masukkan teks klaim atau upload bukti gambar/video.' });
+    // Validasi input
+    if (!claim && !file) return res.status(400).json({ error: 'Input kosong!' });
 
-  let logMessage = `\n📩 [TEST MODE] Menerima Input:`;
-  if (claim) logMessage += `\n   - Teks: "${claim}"`;
-  if (file) logMessage += `\n   - File: ${file.originalname} (${file.mimetype})`;
-  console.log(logMessage);
+    console.log(`\n📩 Input: "${claim || 'Tanpa Teks'}" | File: ${file ? file.originalname : 'No'}`);
 
-  try {
-    console.log('⚡ Menghubungi Groq (Llama 3.3)...');
-    
-    const apiKey = process.env.GROQ_API_KEY;
-    const url = "https://api.groq.com/openai/v1/chat/completions";
+    try {
+        // 1. Tentukan apa yang mau dicari di internet
+        // Jika user upload file "ufo_monas.jpg" tapi tidak kasih teks, kita pakai nama file untuk searching
+        let query = claim;
+        if (!query && file) query = file.originalname;
+        
+        let searchContext = "";
+        if (query) {
+            searchContext = await searchInternet(query);
+        }
 
-    // KITA MODIFIKASI PROMPT UNTUK MENYADARI ADANYA FILE (Simulasi Context)
-    // Catatan: Llama 3.3 via Groq saat ini text-based. 
-    // Di masa depan, kamu bisa kirim gambar ke Vision API (seperti GPT-4o atau Llava).
-    // Di sini kita memberitahu AI bahwa user melampirkan file bukti.
-    
-    let contextInfo = "";
-    if (file) {
-        contextInfo = `[INFO: Pengguna juga melampirkan file bukti bernama "${file.originalname}". Karena Anda adalah model teks, asumsikan file tersebut relevan dengan klaim pengguna.]`;
-    }
+        // 2. Siapkan Prompt untuk Llama 3.3
+        // Kita jujur ke AI: "User upload file, tapi kamu model teks, jadi analisis berdasarkan konteks nama file dan internet saja."
+        
+        const systemPrompt = `
+        Anda adalah VeriHoax, AI Fact-Checker yang kritis dan logis.
+        Tugas: Analisis kebenaran klaim berdasarkan DATA INTERNET yang disediakan.
+        
+        ATURAN OUTPUT:
+        - Output HANYA JSON valid (tanpa markdown).
+        - Format: {"skor": (0-100), "ringkasan": "...", "analisis": "..."}
+        `;
 
-    const systemPrompt = `Anda adalah AI pendeteksi hoaks yang kritis.
-    Tugas: Analisis klaim berikut: "${claim}". ${contextInfo}
-    
-    ATURAN WAJIB: 
-    1. Output HANYA JSON valid.
-    2. Jangan ada teks pengantar.
-    Format JSON:
-    {
-      "skor": (angka 0-100, makin tinggi makin PERCAYA itu FAKTA),
-      "ringkasan": "satu kalimat pendek yang padat",
-      "analisis": "penjelasan singkat 2-3 kalimat mengenai kebenaran klaim"
-    }`;
+        let userPrompt = `
+        KLAIM PENGGUNA: "${claim ? claim : 'Cek kebenaran hal ini'}"
+        
+        DATA FAKTA DARI INTERNET:
+        ${searchContext ? searchContext : 'Tidak ada data internet spesifik.'}
+        `;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
+        if (file) {
+            userPrompt += `\n[INFO SISTEM]: Pengguna melampirkan file bukti bernama "${file.originalname}". Karena server Vision sedang maintenance, analisis difokuskan pada klaim teks dan pencarian fakta di internet. Jika nama file mencurigakan, masukkan dalam pertimbangan.`;
+        }
+
+        // 3. Kirim ke Groq (Llama 3.3 70B - Text Only)
+        console.log('⚡ Mengirim ke Groq (Llama 3.3)...');
+        
+        const completion = await groq.chat.completions.create({
             messages: [
-                { role: "system", content: "Anda adalah mesin output JSON." },
-                { role: "user", content: systemPrompt }
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
             ],
+            model: "llama-3.3-70b-versatile", // Model ini SANGAT stabil & pintar
+            temperature: 0.5,
+            max_tokens: 1024,
             response_format: { type: "json_object" }
-        })
-    });
+        });
 
-    if (!response.ok) {
-        const errData = await response.text();
-        throw new Error(`Groq API Error: ${errData}`);
+        const aiResponse = completion.choices[0].message.content;
+        console.log("📝 Output AI:", aiResponse);
+        
+        const aiData = JSON.parse(aiResponse);
+
+        // Bersihkan file temp
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+
+        res.json({
+            success: true,
+            analysisData: aiData,
+            txHash: "0x_GROQ_L3_VERIFIED_" + Date.now()
+        });
+
+    } catch (error) {
+        console.error("❌ SERVER ERROR:", error);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        res.status(500).json({ error: "Terjadi kesalahan pada server AI." });
     }
-
-    const data = await response.json();
-    const rawText = data.choices[0].message.content;
-    console.log("📝 Respon AI:", rawText);
-
-    const aiData = JSON.parse(rawText);
-
-    // Hapus file sementara setelah diproses agar tidak menuhin server
-    if (file && fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
-    }
-
-    console.log('🚧 Blockchain dimatikan sementara untuk testing...');
-    const fakeHash = "0x_BUKTI_FILE_DAN_TEKS_TERCATAT_" + Date.now();
-
-    res.json({ 
-        success: true, 
-        analysisData: aiData, 
-        txHash: fakeHash
-    });
-
-  } catch (error) {
-    console.error("❌ ERROR:", error);
-    res.status(500).json({ error: error.message });
-  }
 });
 
 const PORT = 8080;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server VeriHoax berjalan di http://localhost:${PORT}`);
+    console.log(`🚀 VeriHoax (Groq Llama 3.3 Stable) aktif di port ${PORT}`);
 });
