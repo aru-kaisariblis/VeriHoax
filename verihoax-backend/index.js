@@ -9,7 +9,7 @@ import axios from 'axios';
 dotenv.config();
 const app = express();
 const upload = multer({ dest: 'uploads/' });
-
+ 
 // Validasi API Key
 if (!process.env.GROQ_API_KEY || !process.env.TAVILY_API_KEY) {
     console.error("❌ ERROR: Pastikan GROQ_API_KEY dan TAVILY_API_KEY ada di .env");
@@ -30,14 +30,21 @@ async function searchInternet(query) {
             query: query,
             search_depth: "basic",
             include_answer: true,
-            max_results: 3
+            max_results: 5//key
         });
         
-        if (!response.data.results) return "";
-        return response.data.results.map(r => `- ${r.title} (${r.url}): ${r.content}`).join("\n");
+        if (!response.data.results) return { text: "", sources: [] }; //key
+        const sources = response.data.results.map(r => r.url);
+        const text = response.data.results
+            .map(r => `- ${r.title}: ${r.content}`)
+            .join("\n");
+
+        return { text, sources };
+        //key dri 37-42
+        //return response.data.results.map(r => `- ${r.title} (${r.url}): ${r.content}`).join("\n");
     } catch (error) {
         console.error("⚠️ Search Error (Skip):", error.message);
-        return "";
+        return { text: "", sources: [] }; //key
     }
 }
 
@@ -73,12 +80,15 @@ app.post('/api/analyze', upload.single('media'), async (req, res) => {
         - Format: {"skor": (0-100), "ringkasan": "...", "analisis": "..."}
         `;
 
+        let searchData = { text: "", sources: [] };
+        if (query) searchData = await searchInternet(query);
+
         let userPrompt = `
         KLAIM PENGGUNA: "${claim ? claim : 'Cek kebenaran hal ini'}"
         
         DATA FAKTA DARI INTERNET:
-        ${searchContext ? searchContext : 'Tidak ada data internet spesifik.'}
-        `;
+        ${searchData.text ? searchData.text : 'Tidak ada data khusus ditemukan.'}
+        `; //key 83-91
 
         if (file) {
             userPrompt += `\n[INFO SISTEM]: Pengguna melampirkan file bukti bernama "${file.originalname}". Karena server Vision sedang maintenance, analisis difokuskan pada klaim teks dan pencarian fakta di internet. Jika nama file mencurigakan, masukkan dalam pertimbangan.`;
@@ -109,8 +119,10 @@ app.post('/api/analyze', upload.single('media'), async (req, res) => {
         res.json({
             success: true,
             analysisData: aiData,
+            sources: searchData.sources,
             txHash: "0x_GROQ_L3_VERIFIED_" + Date.now()
-        });
+        }); //key API 119-124
+
 
     } catch (error) {
         console.error("❌ SERVER ERROR:", error);
