@@ -118,6 +118,8 @@
                         <p id="resAnalisis" class="text-gray-300 leading-relaxed"></p>
                     </div>
 
+                    <div id="resSources" class="bg-gray-800/60 p-4 rounded-xl border border-gray-700 text-sm text-purple-200 mb-4"></div>
+                    <!-- //key 121 -->
                     <a id="resLink" href="#" target="_blank" class="block bg-green-900/20 hover:bg-green-900/30 border border-green-500/30 rounded-xl p-4 text-center group transition-all">
                         <div class="flex items-center justify-center gap-2 text-green-400 group-hover:text-green-300">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -218,6 +220,18 @@
                     else skorEl.className = "text-4xl font-black text-yellow-400";
 
                     document.getElementById('resAnalisis').innerText = aiRes.analisis;
+                    const sourcesEl = document.getElementById('resSources');
+
+                    if (data.sources && data.sources.length > 0) {
+                        sourcesEl.innerHTML = 
+                            "<p class='text-xs text-gray-400 mb-2'>Sumber</p>" +
+                            data.sources
+                                .map(u => `<a href="${u}" target="_blank" class="block text-blue-400 hover:text-blue-300">${u}</a>`)
+                                .join("");
+                    } else {
+                        sourcesEl.innerHTML = "";
+                    } //key 223-233 harusnya tdk ada
+
                     document.getElementById('resLink').href = `https://amoy.polygonscan.com/tx/${data.txHash}`;
 
                     document.getElementById('loading').classList.add('hidden');
