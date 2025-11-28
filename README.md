@@ -1,17 +1,18 @@
-# VeriHoax 🛡️ - AI Fact Checker
 
-![VeriHoax Banner](https://via.placeholder.com/1000x300?text=VeriHoax+Project+Banner) 
-*(Ganti link di atas dengan gambar screenshot aplikasimu nanti)*
+# VeriHoax 🛡️
+<img width="1470" height="956" alt="Screenshot 2025-11-29 at 00 33 36" src="https://github.com/user-attachments/assets/14006242-439f-4a6e-9e9f-875b5b0479a8" />
+ - AI Fact Checker
+
 
 **VeriHoax** adalah aplikasi pendeteksi berita bohong (hoax) berbasis Artificial Intelligence. Aplikasi ini menggunakan **Llama 3.3** via Groq untuk menganalisis klaim, serta **Tavily API** untuk mencari rujukan fakta terkini dari internet secara real-time.
 
 > "Memerangi disinformasi dengan kecepatan AI dan validitas data internet."
 
-## ✨ Fitur Unggulan
+## Fitur Unggulan
 
 * 🚀 **Analisis Cepat**: Menggunakan Groq SDK untuk inferensi AI super cepat.
 * 🌐 **Real-Time Fact Check**: Terintegrasi dengan Tavily Search API untuk mencari berita terbaru.
-* 🔍 **Anti-Halusinasi**: Menyertakan sumber/link rujukan valid yang bisa diklik.
+* 🔍 **Berbasis Fakta**: Menyertakan sumber/link rujukan valid yang bisa diklik.
 * 🎨 **Modern UI**: Antarmuka Glassmorphism yang responsif menggunakan Tailwind CSS.
 
 ## 🛠️ Tech Stack
@@ -26,7 +27,7 @@
 * Axios (HTTP Client)
 * Multer (File Handling)
 
-## ⚙️ Cara Menjalankan (Installation)
+## ⚙️ Cara Menjalankan (Instalasi)
 
 Ikuti langkah ini untuk menjalankan project di komputer lokal:
 
