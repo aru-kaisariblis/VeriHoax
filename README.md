@@ -12,7 +12,6 @@
 * 🚀 **Analisis Cepat**: Menggunakan Groq SDK untuk inferensi AI super cepat.
 * 🌐 **Real-Time Fact Check**: Terintegrasi dengan Tavily Search API untuk mencari berita terbaru.
 * 🔍 **Anti-Halusinasi**: Menyertakan sumber/link rujukan valid yang bisa diklik.
-* 🖼️ **Dukungan Multimedia**: Bisa menganalisis klaim berdasarkan nama file gambar/video (simulasi vision).
 * 🎨 **Modern UI**: Antarmuka Glassmorphism yang responsif menggunakan Tailwind CSS.
 
 ## 🛠️ Tech Stack
@@ -33,5 +32,28 @@ Ikuti langkah ini untuk menjalankan project di komputer lokal:
 
 **1. Clone Repository**
 ```bash
-git clone [https://github.com/username-kamu/VeriHoax.git](https://github.com/username-kamu/VeriHoax.git)
+https://github.com/aru-kaisariblis/VeriHoax
 cd VeriHoax
+```
+
+
+**2. Install Dependencies Pastikan kamu ada di folder backend (jika dipisah) atau root folder.**
+```bash
+npm install
+```
+
+
+**3. Konfigurasi Environment Variable Buat file .env di folder root, lalu isi dengan API Key kamu:**
+```bash
+GROQ_API_KEY=gsk_ur8... (Dapatkan di console.groq.com)
+TAVILY_API_KEY=tvly-... (Dapatkan di tavily.com)
+```
+
+
+**4. Jalankan Server**
+```bash
+node index.js
+```
+
+
+**5. Buka Aplikasi Buka file index.html di browser kamu, atau gunakan Live Server.**
